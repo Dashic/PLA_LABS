@@ -25,7 +25,7 @@ data_bits = np.zeros((4, 5), dtype=int)
         
 for i in range(len(bin_word)):
     bit_value = int(bin_word[i])
-    data_bits[i % 4][i // 4] = bit_value
+    data_bits[i // 5][i % 5] = bit_value
 
 
 def encoding(word):
@@ -42,7 +42,9 @@ def encoding(word):
     
     return encoding_M
 
-def decoding(word):
+p = encoding(word)
+
+def decoding(p):
     
 # Матрица проверки четности H
 # Первые 4 столбца будут соответствовать битам данных
@@ -57,7 +59,7 @@ def decoding(word):
     
     return decoding_M
 
-p = encoding(word)
+
 
 # 1 1 0 1 0
 # 0 0 0 0 0
@@ -69,9 +71,11 @@ p = encoding(word)
 
 p[0][1] = 0
 p[3][2] = 1
-p[2][4] = 1
+p[2][3] = 0
 p[5][1] = 1
-        
+
+   
+error_syndrome = decoding(p)     
 
 H = np.array([[1, 1, 0, 1, 1, 0, 0],
               [1, 1, 1, 0, 0, 1, 0],
@@ -82,28 +86,27 @@ k = [] #Список с номерами столбцов с ошибками
 s = [] #Список с ошибками
 
 for i in range(5):
-    if str(np.transpose(decoding(word))[i]) != str(np.array([0, 0, 0])):
-        k += [i+1]
-        s = [list(np.transpose(decoding(word))[i])] + s
+    if not np.array_equal(np.transpose(error_syndrome)[i], np.array([0, 0, 0])):
+        k.append(i+1)
+        s.append(list(np.transpose(error_syndrome)[i]))
 
 
 d = [] #Список с номерами строк с ошибок
 for j in range(len(s)):
     for y in range(7):
-        if str(np.array(s[j])) == str(np.transpose(H)[y]):
-            d += [y-1]
+        if np.array_equal(s[j], np.transpose(H)[y]):
+            d.append(y-1)
+
 
 for i in range(len(k)):
     p[k[i]][d[i]] ^= 1
 
-end_word = [list(p[1])]
-for i in range(3,6):
-    end_word += [list(p[i])]
-
-list_end = []
+end_word = []
 for i in range(4):
-    list_end += end_word[i]
-bin_list_end = [str(i) for i in list_end]
+    end_word += list(p[i])
+
+
+bin_list_end = [str(i) for i in end_word]
 bin_end = ''.join(bin_list_end)
 
 last_list = []
